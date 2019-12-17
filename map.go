@@ -44,8 +44,28 @@ func getTrafficLights() (trLight []TrafficLights) {
 
 }
 
-func makeBmp(Points Point, filepath string) (err error) {
-	url := fmt.Sprintf("https://static-maps.yandex.ru/1.x/?ll=%3.15f,%3.15f&z=19&l=map&size=450,450", Points.Y, Points.X)
+var (
+	str1 = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+			<svg
+			xmlns:svg="http://www.w3.org/2000/svg"
+			xmlns="http://www.w3.org/2000/svg"
+			width="450mm"
+			height="450mm"
+			viewBox="0 0 450 450">
+			<g>
+			<text
+				style="font-size:14px;font-family:sans-serif"
+				x="60"
+				y="70">
+				<tspan
+				x="10"`
+	str2 = `</text>
+  			</g>
+			</svg>`
+)
+
+func makeBmp(TL TrafficLights, filepath string) (err error) {
+	url := fmt.Sprintf("https://static-maps.yandex.ru/1.x/?ll=%3.15f,%3.15f&z=19&l=map&size=450,450", TL.Points.Y, TL.Points.X)
 	// don't worry about errors
 	response, err := http.Get(url)
 	if err != nil {
@@ -65,8 +85,8 @@ func makeBmp(Points Point, filepath string) (err error) {
 		return err
 	}
 	defer file1.Close()
-	str1 := " <svg  version=\"1.1\" width=\"1280\" height=\"1024\"> </svg>"
-	fmt.Fprint(file1, str1)
+	str3 := fmt.Sprintf("y=\"30\">%s</tspan>", TL.Description)
+	fmt.Fprintln(file1, str1, str3, str2)
 
 	// Use io.Copy to just dump the response body to the file. This supports huge files
 	_, err = io.Copy(file, response.Body)

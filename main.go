@@ -49,7 +49,7 @@ func main() {
 				os.Mkdir(pathTL, os.ModePerm)
 				tempstr := strconv.Itoa(TL.ID) + "   " + TL.Description
 				fmt.Println(TL.Description)
-				err = makeBmp(TL.Points, pathTL+"//")
+				err = makeBmp(TL, pathTL+"//")
 				if err != nil {
 					Info.Println(err)
 				}
