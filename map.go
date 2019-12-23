@@ -52,16 +52,12 @@ var (
 			width="450mm"
 			height="450mm"
 			viewBox="0 0 450 450">
-			<g>
-			<text
-				style="font-size:14px;font-family:sans-serif"
-				x="60"
-				y="70">
-				<tspan
-				x="10"`
-	str2 = `</text>
-  			</g>
-			</svg>`
+			<foreignObject x="5" y="5" width="100" height="450">
+			<div xmlns="http://www.w3.org/1999/xhtml"
+		style="font-size:8px;font-family:sans-serif">`
+	str2 = `</div>
+			</foreignObject>
+ 			</svg>`
 )
 
 func makeBmp(TL TrafficLights, filepath string) (err error) {
@@ -85,7 +81,7 @@ func makeBmp(TL TrafficLights, filepath string) (err error) {
 		return err
 	}
 	defer file1.Close()
-	str3 := fmt.Sprintf("y=\"30\">%s</tspan>", TL.Description)
+	str3 := fmt.Sprintf("%s", TL.Description)
 	fmt.Fprintln(file1, str1, str3, str2)
 
 	// Use io.Copy to just dump the response body to the file. This supports huge files
