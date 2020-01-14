@@ -36,29 +36,37 @@ func main() {
 	fmt.Println("Start work...")
 	//----------------------------------------------------------------------
 
-	tableReg := getRegion()
+	tableReg, tableArea, err := GetRegionInfo()
+	fmt.Println(tableArea)
 	tableTL := getTrafficLights()
-	for _, region := range tableReg {
+	for numReg, nameReg := range tableReg {
 		var strTxt []string
-		pathReg := os.Getenv("dir_path") + "//" + strconv.Itoa(region.Region)
+		pathReg := os.Getenv("dir_path") + "//" + strconv.Itoa(numReg)
 		os.Mkdir(pathReg, os.ModePerm)
-		strTxt = append(strTxt, region.Name)
-		for _, TL := range tableTL {
-			pathTL := os.Getenv("dir_path") + "//" + strconv.Itoa(region.Region) + "//" + strconv.Itoa(TL.ID)
-			if region.Region == TL.Regin {
-				os.Mkdir(pathTL, os.ModePerm)
-				tempstr := strconv.Itoa(TL.ID) + "   " + TL.Description
-				fmt.Println(TL.Description)
-				err = makeBmp(TL, pathTL+"//")
-				if err != nil {
-					Info.Println(err)
+		strTxt = append(strTxt, nameReg)
+		for numArea, nameArea := range tableArea[nameReg] {
+			pathArea := pathReg + "//" + strconv.Itoa(numArea)
+			os.Mkdir(pathArea, os.ModePerm)
+			straa := strconv.Itoa(numArea) + " " + nameArea
+			strTxt = append(strTxt, straa)
+			for _, TL := range tableTL {
+				pathTL := pathArea + "//" + strconv.Itoa(TL.ID)
+				if numReg == TL.Regin && TL.Area == numArea {
+					os.Mkdir(pathTL, os.ModePerm)
+					tempstr := strconv.Itoa(TL.ID) + "   " + TL.Description
+					fmt.Println(TL.Description)
+					err = makeBmp(TL, pathTL+"//")
+					if err != nil {
+						Info.Println(err.Error())
+					}
+					strTxt = append(strTxt, tempstr)
 				}
-				strTxt = append(strTxt, tempstr)
 			}
 		}
+
 		SaveFile(pathReg+"//Info.txt", strTxt)
 	}
-
+	fmt.Println("DONE!!!")
 }
 
 func SaveFile(FileName string, data []string) (err error) {

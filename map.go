@@ -7,36 +7,75 @@ import (
 	"os"
 )
 
-type Region struct {
-	Region int
-	Name   string
+//RegionInfo расшифровка региона
+type RegionInfo struct {
+	Num        int    `json:"num"`        //уникальный номер региона
+	NameRegion string `json:"nameRegion"` //расшифровка номера
+}
+
+type AreaInfo struct {
+	Num      int    `json:"num"`      //уникальный номер зоны
+	NameArea string `json:"nameArea"` //расшифровка номера
 }
 
 type TrafficLights struct {
 	ID          int
 	Regin       int
+	Area        int
 	Description string
 	Points      Point
 }
 
-func getRegion() (region []Region) {
-	temp := &Region{}
-	sqlquery := fmt.Sprintf("select region, name from %s", os.Getenv("region_table"))
-	rows, _ := GetDB().Raw(sqlquery).Rows()
-	for rows.Next() {
-		rows.Scan(&temp.Region, &temp.Name)
-		region = append(region, *temp)
+//GetRegionInfo получить таблицу регионов
+func GetRegionInfo() (region map[int]string, area map[string]map[int]string, err error) {
+	region = make(map[int]string)
+	area = make(map[string]map[int]string)
+	sqlStr := fmt.Sprintf("select region, nameregion, area, namearea from %s", os.Getenv("region_table"))
+	rows, err := GetDB().Raw(sqlStr).Rows()
+	if err != nil {
+		return nil, nil, err
 	}
-	return
+	for rows.Next() {
+		var (
+			tempReg  = &RegionInfo{}
+			tempArea = &AreaInfo{}
+		)
+		err = rows.Scan(&tempReg.Num, &tempReg.NameRegion, &tempArea.Num, &tempArea.NameArea)
+		if err != nil {
+			return nil, nil, err
+		}
+		if _, ok := region[tempReg.Num]; !ok {
+			region[tempReg.Num] = tempReg.NameRegion
+		}
+
+		if _, ok := area[tempReg.NameRegion][tempArea.Num]; !ok {
+			if _, ok := area[tempReg.NameRegion]; !ok {
+				area[tempReg.NameRegion] = make(map[int]string)
+			}
+			area[tempReg.NameRegion][tempArea.Num] = tempArea.NameArea
+		}
+	}
+	return region, area, err
 }
+
+//func getRegion() (region []Region) {
+//	temp := &Region{}
+//	sqlquery := fmt.Sprintf("select region, area, nameregion, namearea from %s", os.Getenv("region_table"))
+//	rows, _ := GetDB().Raw(sqlquery).Rows()
+//	for rows.Next() {
+//		rows.Scan(&temp.Region, &temp.Name)
+//		region = append(region, *temp)
+//	}
+//	return
+//}
 
 func getTrafficLights() (trLight []TrafficLights) {
 	var dgis string
 	temp := &TrafficLights{}
-	sqlquery := fmt.Sprintf("select region, id, dgis, describ from %s", os.Getenv("gis_table"))
+	sqlquery := fmt.Sprintf("select region, id, area, dgis, describ from %s", os.Getenv("gis_table"))
 	rows, _ := GetDB().Raw(sqlquery).Rows()
 	for rows.Next() {
-		rows.Scan(&temp.Regin, &temp.ID, &dgis, &temp.Description)
+		rows.Scan(&temp.Regin, &temp.ID, &temp.Area, &dgis, &temp.Description)
 		temp.Points.StrToFloat(dgis)
 		trLight = append(trLight, *temp)
 	}
@@ -70,7 +109,7 @@ func makeBmp(TL TrafficLights, filepath string) (err error) {
 	defer response.Body.Close()
 
 	//open a file for writing
-	file, err := os.Create(filepath + "map.bmp")
+	file, err := os.Create(filepath + "map.png")
 	if err != nil {
 		return err
 	}
